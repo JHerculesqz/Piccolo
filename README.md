@@ -17,9 +17,12 @@ Piccolo is a lightweight microservice that publishes an existing VNC desktop ([T
   - [Option 1: Run with uv](#option-1-run-with-uv)
   - [Option 2: Run with Docker Compose](#option-2-run-with-docker-compose)
   - [Open the Desktop](#open-the-desktop)
+- [Configuration](#configuration)
 - [Use Cases](#use-cases)
 - [Security Notes](#security-notes)
+- [Development](#development)
 - [Goals](#goals)
+- [Third-Party Components](#third-party-components)
 - [Documentation](#documentation)
 - [License](#license)
 
@@ -41,6 +44,7 @@ In practice, Piccolo is the missing link between an AI Agent and the desktop sof
 | Input | An existing TigerVNC server on a Windows / Linux / macOS host |
 | Output | A noVNC web desktop on your LAN |
 | Default web port | `65211` |
+| Runtime | Python 3.10+ (FastAPI + uvicorn) |
 | Deployment | `uv run` or Docker Compose |
 | Client requirement | A modern browser |
 
@@ -126,37 +130,18 @@ Piccolo starts its web service on port `65211`. Keep the process running.
 
 ### Option 2: Run with Docker Compose
 
-Create a `docker-compose.yml` next to this README:
-
-```yaml
-services:
-  piccolo:
-    build: .
-    image: piccolo:latest
-    container_name: piccolo
-    restart: unless-stopped
-    ports:
-      - "65211:65211"
-    command:
-      - "--ip"
-      - "192.168.1.100"
-      - "--port"
-      - "65212"
-```
-
-Start it:
+The repository ships a `docker-compose.yml` that builds Piccolo, maps port `65211`, and reads the VNC target from environment variables:
 
 ```bash
+cp .env.example .env
+# Edit .env if TigerVNC is not on the Docker host, or uses another port.
 docker compose up -d
-```
-
-Confirm the container is running:
-
-```bash
 docker compose ps
 ```
 
-> **Note** — If TigerVNC runs on the same machine as Docker, make sure the container can reach it. On Docker Desktop, `host.docker.internal` resolves to the host; on Linux you may need `network_mode: host` or an `extra_hosts` entry. If TigerVNC listens only on `127.0.0.1`, a bridge-networked container cannot reach it.
+By default the compose file points Piccolo at `host.docker.internal:65212` — the Docker host as seen from inside a container. Set `PICCOLO_VNC_HOST` to another LAN IP or hostname if TigerVNC runs on a different machine. The `extra_hosts` entry makes `host.docker.internal` work on Linux as well. If the default PyPI index is slow during the build, set `PIP_INDEX_URL` in `.env` (see `.env.example`).
+
+> **Note** — If TigerVNC listens only on `127.0.0.1`, a bridge-networked container cannot reach it. Bind TigerVNC to a reachable interface, or run Piccolo directly on the host with `uv run`.
 
 ### Open the Desktop
 
@@ -171,6 +156,35 @@ http://192.168.1.100:65211/vnc.html?autoconnect=true
 - Both installation methods expose the same URL.
 
 If the page does not load, check that Piccolo is running, that port `65211` is open in the host firewall, and that Piccolo can reach the TigerVNC port.
+
+## Configuration
+
+All options are available as CLI flags and environment variables. CLI flags take precedence.
+
+| CLI flag | Environment variable | Default | Description |
+| --- | --- | --- | --- |
+| `--ip` | `PICCOLO_VNC_HOST` | required | IP address or hostname of the TigerVNC server |
+| `--port` | `PICCOLO_VNC_PORT` | required | TigerVNC port (for example `65212`) |
+| `--web-host` | `PICCOLO_WEB_HOST` | `0.0.0.0` | Bind address for the Piccolo web server |
+| `--web-port` | `PICCOLO_WEB_PORT` | `65211` | noVNC and WebSocket port |
+| `--log-level` | `PICCOLO_LOG_LEVEL` | `info` | `critical`, `error`, `warning`, `info`, `debug`, or `trace` |
+
+Examples:
+
+```bash
+# Explicit flags
+uv run piccolo --ip 192.168.1.100 --port 65212 --web-port 65211
+
+# Or environment variables
+PICCOLO_VNC_HOST=192.168.1.100 PICCOLO_VNC_PORT=65212 uv run piccolo
+```
+
+The root path `/` redirects to `/vnc.html?autoconnect=true`. A health endpoint is available at `/health`:
+
+```bash
+curl http://192.168.1.100:65211/health
+# {"status":"ok","service":"piccolo","version":"0.1.0"}
+```
 
 ## Use Cases
 
@@ -190,6 +204,36 @@ Piccolo is designed for **trusted local networks**.
 - Restrict access with firewall rules to the LAN or VPN ranges that need it.
 - Traffic between Piccolo and TigerVNC is only as secure as the VNC configuration itself.
 
+## Development
+
+```bash
+uv sync              # create the environment and install dependencies
+uv run pytest        # run the test suite
+uv run ruff check .  # lint
+uv build             # build sdist + wheel into dist/
+```
+
+Project layout:
+
+| Path | Purpose |
+| --- | --- |
+| `src/piccolo/app.py` | FastAPI app, health endpoint, noVNC static serving |
+| `src/piccolo/proxy.py` | WebSocket ↔ TigerVNC TCP bridge |
+| `src/piccolo/cli.py` | `piccolo` CLI and environment-variable handling |
+| `src/piccolo/web/vncs/` | Vendored noVNC 1.7.0 assets |
+
+Container build:
+
+```bash
+docker build -t piccolo:latest .
+```
+
+If the default PyPI index is slow, pass a mirror at build time:
+
+```bash
+docker build --build-arg PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple -t piccolo:latest .
+```
+
 ## Goals
 
 The world already has many excellent Agent frameworks. What Agents still need is more **lightweight, convenient agent infrastructure and AI infrastructure** — so that individuals and small businesses can embrace AI at a lower cost.
@@ -201,6 +245,10 @@ Piccolo is built around that idea:
 - **One command to start** — `uv run piccolo ...` or `docker compose up -d`.
 - **Browser-first** — nothing to install on the device that views or drives the desktop.
 - **Complementary, not competitive** — Piccolo works alongside sandbox middleware rather than replacing it.
+
+## Third-Party Components
+
+The bundled noVNC client under `src/piccolo/web/vncs/` is **noVNC 1.7.0**, licensed under the Mozilla Public License 2.0 (MPL 2.0). See `src/piccolo/web/vncs/LICENSE.txt` for the full license and the licenses of bundled components. Piccolo's own source code is MIT-licensed.
 
 ## Documentation
 

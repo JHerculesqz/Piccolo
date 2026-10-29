@@ -17,9 +17,12 @@ Piccolo 是一个轻量级微服务：它基于 [noVNC](https://github.com/novnc
   - [方式一：使用 uv 直接运行](#方式一使用-uv-直接运行)
   - [方式二：使用 Docker Compose 运行](#方式二使用-docker-compose-运行)
   - [打开桌面](#打开桌面)
+- [配置](#配置)
 - [典型使用场景](#典型使用场景)
 - [安全说明](#安全说明)
+- [开发](#开发)
 - [我们的目标](#我们的目标)
+- [第三方组件](#第三方组件)
 - [文档](#文档)
 - [许可证](#许可证)
 
@@ -41,6 +44,7 @@ Piccolo 可以将 Windows、Linux、macOS 的个人 PC、服务器，通过 VNC 
 | 输入 | Windows / Linux / macOS 宿主机上已有的 TigerVNC 服务 |
 | 输出 | 局域网内可通过浏览器访问的 noVNC 桌面 |
 | 默认 Web 端口 | `65211` |
+| 运行环境 | Python 3.10+（FastAPI + uvicorn） |
 | 部署方式 | `uv run` 或 Docker Compose |
 | 客户端要求 | 任意现代浏览器 |
 
@@ -126,37 +130,18 @@ Piccolo 会在 `65211` 端口启动 Web 服务。保持进程运行即可。
 
 ### 方式二：使用 Docker Compose 运行
 
-在 README 同级目录创建 `docker-compose.yml`：
-
-```yaml
-services:
-  piccolo:
-    build: .
-    image: piccolo:latest
-    container_name: piccolo
-    restart: unless-stopped
-    ports:
-      - "65211:65211"
-    command:
-      - "--ip"
-      - "192.168.1.100"
-      - "--port"
-      - "65212"
-```
-
-启动：
+仓库已提供 `docker-compose.yml`，它会构建 Piccolo、映射 `65211` 端口，并从环境变量读取 VNC 目标：
 
 ```bash
+cp .env.example .env
+# 如果 TigerVNC 不在 Docker 宿主机上，或端口不同，请编辑 .env
 docker compose up -d
-```
-
-确认容器成功运行：
-
-```bash
 docker compose ps
 ```
 
-> **注意** —— 如果 TigerVNC 与 Docker 运行在同一台机器上，请确保容器能够访问它。在 Docker Desktop 上，`host.docker.internal` 指向宿主机；在 Linux 上可能需要 `network_mode: host` 或 `extra_hosts` 配置。如果 TigerVNC 只监听 `127.0.0.1`，使用桥接网络的容器将无法连接。
+默认情况下，compose 文件指向 `host.docker.internal:65212` —— 即容器视角下的 Docker 宿主机。如果 TigerVNC 运行在另一台局域网机器上，请把 `PICCOLO_VNC_HOST` 设置为那台机器的 IP 或主机名。`extra_hosts` 配置让 `host.docker.internal` 在 Linux 上也可用。如果构建时默认 PyPI 源较慢，可以在 `.env` 中设置 `PIP_INDEX_URL`（参考 `.env.example`）。
+
+> **注意** —— 如果 TigerVNC 只监听 `127.0.0.1`，使用桥接网络的容器将无法连接。请将 TigerVNC 绑定到可访问的网络接口，或直接在宿主机上用 `uv run` 运行 Piccolo。
 
 ### 打开桌面
 
@@ -171,6 +156,35 @@ http://192.168.1.100:65211/vnc.html?autoconnect=true
 - 两种安装方式使用同一个访问地址。
 
 如果页面无法打开，请检查 Piccolo 是否正在运行、宿主机防火墙是否放行 `65211` 端口，以及 Piccolo 是否能够连接到 TigerVNC 端口。
+
+## 配置
+
+所有参数都可以通过命令行参数或环境变量提供，命令行参数优先。
+
+| 命令行参数 | 环境变量 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `--ip` | `PICCOLO_VNC_HOST` | 必填 | TigerVNC 服务器的 IP 或主机名 |
+| `--port` | `PICCOLO_VNC_PORT` | 必填 | TigerVNC 端口（例如 `65212`） |
+| `--web-host` | `PICCOLO_WEB_HOST` | `0.0.0.0` | Piccolo Web 服务绑定地址 |
+| `--web-port` | `PICCOLO_WEB_PORT` | `65211` | noVNC 与 WebSocket 端口 |
+| `--log-level` | `PICCOLO_LOG_LEVEL` | `info` | `critical`、`error`、`warning`、`info`、`debug` 或 `trace` |
+
+示例：
+
+```bash
+# 显式参数
+uv run piccolo --ip 192.168.1.100 --port 65212 --web-port 65211
+
+# 或使用环境变量
+PICCOLO_VNC_HOST=192.168.1.100 PICCOLO_VNC_PORT=65212 uv run piccolo
+```
+
+根路径 `/` 会重定向到 `/vnc.html?autoconnect=true`。健康检查接口为 `/health`：
+
+```bash
+curl http://192.168.1.100:65211/health
+# {"status":"ok","service":"piccolo","version":"0.1.0"}
+```
 
 ## 典型使用场景
 
@@ -190,6 +204,36 @@ Piccolo 面向**可信的局域网**设计。
 - 通过防火墙将访问限制在需要使用的局域网或 VPN 网段。
 - Piccolo 与 TigerVNC 之间的流量安全性，取决于 VNC 本身的配置。
 
+## 开发
+
+```bash
+uv sync              # 创建虚拟环境并安装依赖
+uv run pytest        # 运行测试
+uv run ruff check .  # 代码检查
+uv build             # 构建 sdist + wheel 到 dist/
+```
+
+项目结构：
+
+| 路径 | 作用 |
+| --- | --- |
+| `src/piccolo/app.py` | FastAPI 应用、健康检查、noVNC 静态服务 |
+| `src/piccolo/proxy.py` | WebSocket ↔ TigerVNC TCP 双向转发 |
+| `src/piccolo/cli.py` | `piccolo` 命令行与环境变量处理 |
+| `src/piccolo/web/vncs/` | 内置的 noVNC 1.7.0 资源 |
+
+构建容器：
+
+```bash
+docker build -t piccolo:latest .
+```
+
+如果默认 PyPI 源较慢，可以在构建时指定镜像源：
+
+```bash
+docker build --build-arg PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple -t piccolo:latest .
+```
+
 ## 我们的目标
 
 这个世界上已经有了很多优秀的 Agent 框架，但 Agent 需要更多**轻量级、便捷的 Agent 基础设施、AI 基础设施**，便于个人、小规模企业，用更小的代价拥抱 AI。
@@ -201,6 +245,10 @@ Piccolo 围绕这一目标构建：
 - **一条命令启动** —— `uv run piccolo ...` 或 `docker compose up -d`。
 - **浏览器优先** —— 查看或操作桌面的设备无需安装任何软件。
 - **互补而非竞争** —— Piccolo 与沙箱中间件协同工作，而不是取代它们。
+
+## 第三方组件
+
+`src/piccolo/web/vncs/` 下内置的 noVNC 客户端为 **noVNC 1.7.0**，采用 Mozilla Public License 2.0（MPL 2.0）许可。完整许可以及内置组件各自的许可证见 `src/piccolo/web/vncs/LICENSE.txt`。Piccolo 自身代码采用 MIT 许可。
 
 ## 文档
 
