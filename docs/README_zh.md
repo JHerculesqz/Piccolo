@@ -9,6 +9,7 @@ Piccolo 是一个轻量级微服务：它基于 [noVNC](https://github.com/novnc
 ## 目录
 
 - [Piccolo 是什么？](#piccolo-是什么)
+- [名字的由来](#名字的由来)
 - [为什么还需要 Piccolo？](#为什么还需要-piccolo)
 - [工作原理](#工作原理)
 - [快速开始](#快速开始)
@@ -42,6 +43,12 @@ Piccolo 可以将 Windows、Linux、macOS 的个人 PC、服务器，通过 VNC 
 | 默认 Web 端口 | `65211` |
 | 部署方式 | `uv run` 或 Docker Compose |
 | 客户端要求 | 任意现代浏览器 |
+
+## 名字的由来
+
+Piccolo 的名字取自《七龙珠》中的**比克大魔王**。初代比克大魔王最怕**魔封波** —— 正是通过魔封波，他被封印进了电饭锅中。我们希望 Piccolo 就像那个与魔封波相关的电饭锅一样，为 Agent 提供一个**便捷、安全可靠的环境**。
+
+![封印比克大魔王的魔封波电饭锅](piccolo.png)
 
 ## 为什么还需要 Piccolo？
 

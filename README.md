@@ -9,6 +9,7 @@ Piccolo is a lightweight microservice that publishes an existing VNC desktop ([T
 ## Table of Contents
 
 - [What is Piccolo?](#what-is-piccolo)
+- [The Name](#the-name)
 - [Why Piccolo?](#why-piccolo)
 - [How It Works](#how-it-works)
 - [Quick Start](#quick-start)
@@ -42,6 +43,12 @@ In practice, Piccolo is the missing link between an AI Agent and the desktop sof
 | Default web port | `65211` |
 | Deployment | `uv run` or Docker Compose |
 | Client requirement | A modern browser |
+
+## The Name
+
+Piccolo is named after **Demon King Piccolo** from *Dragon Ball*. The original Demon King feared the **Mafuba** (Evil Containment Wave) above all — the technique used to seal him inside an electric rice cooker. We want Piccolo to be that rice cooker for AI Agents: a **convenient, safe, and reliable environment** in which an Agent can work.
+
+![The Mafuba rice cooker that seals Demon King Piccolo](docs/piccolo.png)
 
 ## Why Piccolo?
 
