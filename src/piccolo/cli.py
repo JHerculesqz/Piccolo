@@ -34,7 +34,7 @@ def build_parser() -> argparse.ArgumentParser:
         dest="vnc_port",
         metavar="PORT",
         type=int,
-        help="TigerVNC port, for example 65212 (env: PICCOLO_VNC_PORT).",
+        help="TigerVNC port, for example 65201 (env: PICCOLO_VNC_PORT).",
     )
     parser.add_argument(
         "--web-host",

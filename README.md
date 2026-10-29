@@ -87,7 +87,7 @@ Piccolo is not a replacement for sandboxes. It is the complement: use a sandbox 
                                                                    ▼
                                                       ┌─────────────────────────┐
                                                       │  TigerVNC               │
-                                                      │  :65212 (example)       │
+                                                      │  :65201 (example)       │
                                                       └────────────┬────────────┘
                                                                    ▼
                                                       ┌─────────────────────────┐
@@ -105,20 +105,20 @@ Piccolo is not a replacement for sandboxes. It is the complement: use a sandbox 
 
 ### Prerequisites
 
-- **TigerVNC** is installed and running on the target host, and you know its port (for example, `65212`).
+- **TigerVNC** is installed and running on the target host, and you know its port (for example, `65201`).
 - The machine running the browser can reach the host over the LAN.
 - Port `65211` is free on the host (Piccolo's web port).
 - For Option 1: [uv](https://docs.astral.sh/uv/) and Python 3.10+.
 - For Option 2: Docker with Compose v2.
 
-The examples below use `192.168.1.100` as the host IP and `65212` as the TigerVNC port. Replace them with your own values. Note that TigerVNC must accept connections from Piccolo: if it listens only on `127.0.0.1`, Piccolo must run on the same host, or the VNC server must be bound to a reachable network interface.
+The examples below use `192.168.31.102` as the host IP and `65201` as the TigerVNC port. Replace them with your own values. Note that TigerVNC must accept connections from Piccolo: if it listens only on `127.0.0.1`, Piccolo must run on the same host, or the VNC server must be bound to a reachable network interface.
 
 ### Option 1: Run with uv
 
 From the repository root:
 
 ```bash
-uv run piccolo --ip 192.168.1.100 --port 65212
+uv run piccolo --ip 192.168.31.102 --port 65201
 ```
 
 | Flag | Description |
@@ -139,7 +139,7 @@ docker compose up -d
 docker compose ps
 ```
 
-By default the compose file points Piccolo at `host.docker.internal:65212` — the Docker host as seen from inside a container. Set `PICCOLO_VNC_HOST` to another LAN IP or hostname if TigerVNC runs on a different machine. The `extra_hosts` entry makes `host.docker.internal` work on Linux as well. If the default PyPI index is slow during the build, set `PIP_INDEX_URL` in `.env` (see `.env.example`).
+By default the compose file points Piccolo at `host.docker.internal:65201` — the Docker host as seen from inside a container. Set `PICCOLO_VNC_HOST` to another LAN IP or hostname if TigerVNC runs on a different machine. The `extra_hosts` entry makes `host.docker.internal` work on Linux as well. If the default PyPI index is slow during the build, set `PIP_INDEX_URL` in `.env` (see `.env.example`).
 
 > **Note** — If TigerVNC listens only on `127.0.0.1`, a bridge-networked container cannot reach it. Bind TigerVNC to a reachable interface, or run Piccolo directly on the host with `uv run`.
 
@@ -148,10 +148,10 @@ By default the compose file points Piccolo at `host.docker.internal:65212` — t
 In any browser on the LAN:
 
 ```
-http://192.168.1.100:65211/vnc.html?autoconnect=true
+http://192.168.31.102:65211/vnc.html?autoconnect=true
 ```
 
-- Replace `192.168.1.100` with the host's IP.
+- Replace `192.168.31.102` with the host's IP.
 - `autoconnect=true` makes noVNC connect immediately when the page opens.
 - Both installation methods expose the same URL.
 
@@ -164,7 +164,7 @@ All options are available as CLI flags and environment variables. CLI flags take
 | CLI flag | Environment variable | Default | Description |
 | --- | --- | --- | --- |
 | `--ip` | `PICCOLO_VNC_HOST` | required | IP address or hostname of the TigerVNC server |
-| `--port` | `PICCOLO_VNC_PORT` | required | TigerVNC port (for example `65212`) |
+| `--port` | `PICCOLO_VNC_PORT` | required | TigerVNC port (for example `65201`) |
 | `--web-host` | `PICCOLO_WEB_HOST` | `0.0.0.0` | Bind address for the Piccolo web server |
 | `--web-port` | `PICCOLO_WEB_PORT` | `65211` | noVNC and WebSocket port |
 | `--log-level` | `PICCOLO_LOG_LEVEL` | `info` | `critical`, `error`, `warning`, `info`, `debug`, or `trace` |
@@ -173,16 +173,16 @@ Examples:
 
 ```bash
 # Explicit flags
-uv run piccolo --ip 192.168.1.100 --port 65212 --web-port 65211
+uv run piccolo --ip 192.168.31.102 --port 65201 --web-port 65211
 
 # Or environment variables
-PICCOLO_VNC_HOST=192.168.1.100 PICCOLO_VNC_PORT=65212 uv run piccolo
+PICCOLO_VNC_HOST=192.168.31.102 PICCOLO_VNC_PORT=65201 uv run piccolo
 ```
 
 The root path `/` redirects to `/vnc.html?autoconnect=true`. A health endpoint is available at `/health`:
 
 ```bash
-curl http://192.168.1.100:65211/health
+curl http://192.168.31.102:65211/health
 # {"status":"ok","service":"piccolo","version":"0.1.0"}
 ```
 

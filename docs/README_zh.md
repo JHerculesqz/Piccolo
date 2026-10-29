@@ -87,7 +87,7 @@ Piccolo 并不是要取代沙箱，而是与沙箱互补：需要隔离代码执
                                                                    ▼
                                                       ┌─────────────────────────┐
                                                       │  TigerVNC               │
-                                                      │  :65212（示例）         │
+                                                      │  :65201（示例）         │
                                                       └────────────┬────────────┘
                                                                    ▼
                                                       ┌─────────────────────────┐
@@ -105,20 +105,20 @@ Piccolo 并不是要取代沙箱，而是与沙箱互补：需要隔离代码执
 
 ### 前提条件
 
-- 目标宿主机上已安装并运行 **TigerVNC**，且已知其端口（例如 `65212`）。
+- 目标宿主机上已安装并运行 **TigerVNC**，且已知其端口（例如 `65201`）。
 - 运行浏览器的设备能够通过局域网访问该宿主机。
 - 宿主机上的 `65211` 端口未被占用（Piccolo 的 Web 端口）。
 - 方式一：[uv](https://docs.astral.sh/uv/) 与 Python 3.10+。
 - 方式二：Docker 与 Compose v2。
 
-下文示例中，宿主机 IP 为 `192.168.1.100`，TigerVNC 端口为 `65212`，请替换为你自己的值。另外，TigerVNC 必须允许 Piccolo 连接：如果它只监听 `127.0.0.1`，Piccolo 就需要运行在同一台宿主机上，或者将 VNC 服务绑定到可访问的网络接口。
+下文示例中，宿主机 IP 为 `192.168.31.102`，TigerVNC 端口为 `65201`，请替换为你自己的值。另外，TigerVNC 必须允许 Piccolo 连接：如果它只监听 `127.0.0.1`，Piccolo 就需要运行在同一台宿主机上，或者将 VNC 服务绑定到可访问的网络接口。
 
 ### 方式一：使用 uv 直接运行
 
 在仓库根目录执行：
 
 ```bash
-uv run piccolo --ip 192.168.1.100 --port 65212
+uv run piccolo --ip 192.168.31.102 --port 65201
 ```
 
 | 参数 | 说明 |
@@ -139,7 +139,7 @@ docker compose up -d
 docker compose ps
 ```
 
-默认情况下，compose 文件指向 `host.docker.internal:65212` —— 即容器视角下的 Docker 宿主机。如果 TigerVNC 运行在另一台局域网机器上，请把 `PICCOLO_VNC_HOST` 设置为那台机器的 IP 或主机名。`extra_hosts` 配置让 `host.docker.internal` 在 Linux 上也可用。如果构建时默认 PyPI 源较慢，可以在 `.env` 中设置 `PIP_INDEX_URL`（参考 `.env.example`）。
+默认情况下，compose 文件指向 `host.docker.internal:65201` —— 即容器视角下的 Docker 宿主机。如果 TigerVNC 运行在另一台局域网机器上，请把 `PICCOLO_VNC_HOST` 设置为那台机器的 IP 或主机名。`extra_hosts` 配置让 `host.docker.internal` 在 Linux 上也可用。如果构建时默认 PyPI 源较慢，可以在 `.env` 中设置 `PIP_INDEX_URL`（参考 `.env.example`）。
 
 > **注意** —— 如果 TigerVNC 只监听 `127.0.0.1`，使用桥接网络的容器将无法连接。请将 TigerVNC 绑定到可访问的网络接口，或直接在宿主机上用 `uv run` 运行 Piccolo。
 
@@ -148,10 +148,10 @@ docker compose ps
 在局域网内任意浏览器中打开：
 
 ```
-http://192.168.1.100:65211/vnc.html?autoconnect=true
+http://192.168.31.102:65211/vnc.html?autoconnect=true
 ```
 
-- 将 `192.168.1.100` 替换为宿主机 IP。
+- 将 `192.168.31.102` 替换为宿主机 IP。
 - `autoconnect=true` 表示页面打开后自动连接 noVNC。
 - 两种安装方式使用同一个访问地址。
 
@@ -164,7 +164,7 @@ http://192.168.1.100:65211/vnc.html?autoconnect=true
 | 命令行参数 | 环境变量 | 默认值 | 说明 |
 | --- | --- | --- | --- |
 | `--ip` | `PICCOLO_VNC_HOST` | 必填 | TigerVNC 服务器的 IP 或主机名 |
-| `--port` | `PICCOLO_VNC_PORT` | 必填 | TigerVNC 端口（例如 `65212`） |
+| `--port` | `PICCOLO_VNC_PORT` | 必填 | TigerVNC 端口（例如 `65201`） |
 | `--web-host` | `PICCOLO_WEB_HOST` | `0.0.0.0` | Piccolo Web 服务绑定地址 |
 | `--web-port` | `PICCOLO_WEB_PORT` | `65211` | noVNC 与 WebSocket 端口 |
 | `--log-level` | `PICCOLO_LOG_LEVEL` | `info` | `critical`、`error`、`warning`、`info`、`debug` 或 `trace` |
@@ -173,16 +173,16 @@ http://192.168.1.100:65211/vnc.html?autoconnect=true
 
 ```bash
 # 显式参数
-uv run piccolo --ip 192.168.1.100 --port 65212 --web-port 65211
+uv run piccolo --ip 192.168.31.102 --port 65201 --web-port 65211
 
 # 或使用环境变量
-PICCOLO_VNC_HOST=192.168.1.100 PICCOLO_VNC_PORT=65212 uv run piccolo
+PICCOLO_VNC_HOST=192.168.31.102 PICCOLO_VNC_PORT=65201 uv run piccolo
 ```
 
 根路径 `/` 会重定向到 `/vnc.html?autoconnect=true`。健康检查接口为 `/health`：
 
 ```bash
-curl http://192.168.1.100:65211/health
+curl http://192.168.31.102:65211/health
 # {"status":"ok","service":"piccolo","version":"0.1.0"}
 ```
 
