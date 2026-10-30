@@ -7,10 +7,10 @@ from piccolo.config import Config
 
 
 def test_parse_cli_arguments() -> None:
-    config = parse_config(["--ip", "192.168.1.10", "--port", "65201"], env={})
+    config = parse_config(["--ip", "192.168.1.10", "--port", "65212"], env={})
 
     assert config.vnc_host == "192.168.1.10"
-    assert config.vnc_port == 65201
+    assert config.vnc_port == 65212
     assert config.web_host == "0.0.0.0"
     assert config.web_port == 65211
     assert config.log_level == "info"
